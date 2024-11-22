@@ -5,7 +5,6 @@ require('dotenv').config();
 const app = express();
 const PORT = 5000;
 
-// PostgreSQL Connection Pool
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -17,12 +16,11 @@ const pool = new Pool({
   }, 
 });
 
-// Test Database Connection
 pool
   .connect()
   .then((client) => {
     console.log('Connected to the database successfully!');
-    client.release(); // Release the client back to the pool
+    client.release();
   })
   .catch((err) => {
     console.error('Failed to connect to the database:', err.message);
@@ -36,7 +34,7 @@ app.get('/', (req, res) => {
 
 app.get('/test-db', async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW() AS current_time'); // Query to get the current time
+    const result = await pool.query('SELECT NOW() AS current_time');
     res.status(200).send(`Database connection is successful! Current time: ${result.rows[0].current_time}`);
   } catch (err) {
     console.error('Database connection error:', err.message);
