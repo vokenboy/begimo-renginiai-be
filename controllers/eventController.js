@@ -146,6 +146,16 @@ class EventController {
         res.status(500).json({ error: 'Serverio klaida' });
     }
     }
+
+    static async getAllCities(req, res) {
+        try {
+            const cities = await db.query('SELECT id, pavadinimas FROM miestas');
+            res.status(200).json(cities.rows);
+        } catch (error) {
+            console.error('Klaida gaunant miestus:', error);
+            res.status(500).json({ error: 'Serverio klaida' });
+        }
+    }
 }
 
 module.exports = EventController;

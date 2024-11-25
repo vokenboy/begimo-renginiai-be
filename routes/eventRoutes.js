@@ -8,5 +8,6 @@ router.get('/event/:id', EventController.getEventById);
 router.post('/event/postevent', EventController.createEvent);
 router.put('/event/editevent/:id', EventController.updateEventById);
 router.delete('/event/deleteevent/:id', EventController.deleteEventById);
+router.get('/cities', EventController.getAllCities);
 
 module.exports = router;
