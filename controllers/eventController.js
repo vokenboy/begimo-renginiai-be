@@ -2,13 +2,22 @@ const db = require('../db'); // Database connection
 const jwt = require('jsonwebtoken');
 
 class EventController {
-    // Fetch all events
-    static async getAllEvents(req, res) {
+    static async getPublicEvents(req, res) {
         try {
-            const events = await db.query('SELECT * FROM renginys');
-            res.status(200).json(events.rows);
+            const publicEvents = await db.query('SELECT * FROM renginys WHERE privatus = false');
+            res.status(200).json(publicEvents.rows);
         } catch (error) {
-            console.error('Klaida gaunant renginius:', error);
+            console.error('Klaida gaunant viešus renginius:', error);
+            res.status(500).json({ error: 'Serverio klaida' });
+        }
+    }
+
+    static async getPrivateEvents(req, res) {
+        try {
+            const privateEvents = await db.query('SELECT * FROM renginys WHERE privatus = true');
+            res.status(200).json(privateEvents.rows);
+        } catch (error) {
+            console.error('Klaida gaunant privačius renginius:', error);
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
