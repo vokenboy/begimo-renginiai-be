@@ -1,6 +1,8 @@
 const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const EmailController = require('./emailController');
+const crypto = require('crypto');
 
 class UserController {
     static async register(req, res) {
@@ -46,6 +48,13 @@ class UserController {
         return jwt.sign({ user }, process.env.JWT_SECRET, { expiresIn: '24h' });
     }
 
+    static async createRecoveryString(){
+        const recoveryString = crypto.randomBytes(32).toString('hex');
+        return recoveryString;
+    }
+
+
+
     static async verifyToken(token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -79,12 +88,31 @@ class UserController {
         }
     }
 
+    static async findUserByEmail(email){
+        try {
+            const user = await db.query('SELECT id, el_pastas as username, slaptazodis as password FROM naudotojas WHERE el_pastas = $1', [email]);
+            return user.rows[0];
+        } catch (error) {
+            console.error('Error finding user by email:', error);
+            throw error;
+        }
+    }
+
     static async findUserById(id){
         try {
             const user = await db.query('SELECT * FROM naudotojas WHERE id = $1', [id]);
             return user.rows[0];
         } catch (error) {
             console.error('Error finding user by id:', error);
+            throw error;
+        }
+    }
+
+    static async createUserPasswordReset(id, code){
+        try {
+            await db.query('INSERT INTO slaptazodzio_pakeitimo_uzklausos (naudotojas_id, kodas, used) VALUES ($1, $2, $3)', [id, code, false]);
+        } catch (error) {
+            console.error('Error creating password reset:', error);
             throw error;
         }
     }
@@ -113,6 +141,33 @@ class UserController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
+
+    static async changePassword(req, res) {
+        try {
+            console.log(req.body);
+            if (!req.body.code || !req.body.password || !req.body.email) {
+                return res.status(401).json({ error: 'Nepateikti visi duomenų laukai' });
+            }
+            const user = await db.query(`SELECT naudotojas.id from naudotojas
+                            INNER JOIN slaptazodzio_pakeitimo_uzklausos ON naudotojas.id = slaptazodzio_pakeitimo_uzklausos.naudotojas_id
+                            WHERE slaptazodzio_pakeitimo_uzklausos.kodas = $1
+                            AND naudotojas.el_pastas = $2 AND slaptazodzio_pakeitimo_uzklausos.used = false`, [req.body.code, req.body.email]);
+            if (!user.rows[0]) {
+                return res.status(404).json({ error: 'Neteisingi duomenys' });
+            }
+
+            console.log(user.rows[0]);
+
+            const hashedPassword = await argon2.hash(req.body.password);
+            await db.query('UPDATE naudotojas SET slaptazodis = $1 WHERE id = $2', [hashedPassword, user.rows[0].id]);
+            await db.query('UPDATE slaptazodzio_pakeitimo_uzklausos SET used = true WHERE naudotojas_id = $1', [user.rows[0].id]);
+            res.status(200).json({ message: 'Slaptažodis pakeistas' });
+        } catch (error) {
+            console.error('Error changing password:', error);
+            res.status(500).json({ error: 'Serverio klaida' });
+        }
+    }
+
 
     static async updateUser(req, res) {
         try {
@@ -156,6 +211,28 @@ class UserController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
+    static async recoverPassword(req, res) {
+        if (!req.body.email) {
+            return res.status(400).json({ error: 'El. pašto adresas yra privalomas' });
+        }
+        try {
+            const code = await UserController.createRecoveryString();
+            console.log(req.body.email);
+            const user = await UserController.findUserByEmail(req.body.email);
+            if (!user) {
+                throw new Error('User not found');
+            }
+            console.log(user);
+            await UserController.createUserPasswordReset(user.id, code);
+            await EmailController.sendPasswordRecoveryEmail(user.slapyvardis, req.body.email, code);
+            
+        } catch (error) {
+            console.error('Error recovering password:', error);
+            res.status(200).json({ message: 'Recovery email sent' });
+        }
+        res.status(200).json({ message: 'Recovery email sent' });
+    } 
+
 }
 
 module.exports = UserController;
