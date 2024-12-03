@@ -28,7 +28,7 @@ class UserController {
     static async login(req, res) {
         try {
             const { username, password } = req.body;
-            const user = await UserController.findUserByUsername(username);
+            let user = await UserController.findUserByUsername(username);
             if (!user) {
                 return res.status(400).json({ error: 'Neteisingi prisijungimo duomenys' });
             }
@@ -36,9 +36,12 @@ class UserController {
             if (!validPassword) {
                 return res.status(400).json({ error: 'Neteisingi prisijungimo duomenys' });
             }
+            delete user.slaptazodis;
             const token = await UserController.createToken({id: user.id, username: user.username});
 
-            res.status(200).json({ jwt: token, userid:user.id });
+            delete user.password;
+
+            res.status(200).json({ jwt: token, userid: user.id, user});
         } catch (error) {
             res.status(500).json({ error: 'Nepavyko prijungti naudotojo' });
         }
@@ -80,7 +83,17 @@ class UserController {
 
     static async findUserByUsername(username){
         try {
-            const user = await db.query('SELECT id, el_pastas as username, slaptazodis as password FROM naudotojas WHERE el_pastas = $1', [username]);
+            const user = await db.query(`SELECT 
+                        naudotojas.id, 
+                        el_pastas AS username, 
+                        slaptazodis AS password, 
+                        COALESCE(teises.nustatymu_redagavimas, FALSE) AS nustatymu_redagavimas,
+                        COALESCE(teises.turinio_redagavimas, FALSE) AS turinio_redagavimas
+                        FROM naudotojas
+                        LEFT JOIN teises ON teises.naudotojas_id = naudotojas.id
+                        WHERE el_pastas = $1;
+                        `, [username]);
+            console.log(user.rows[0]);
             return user.rows[0];
         } catch (error) {
             console.error('Error finding user by username:', error);
