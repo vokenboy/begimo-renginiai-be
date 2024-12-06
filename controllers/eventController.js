@@ -93,7 +93,7 @@ class EventController {
     }
 
     static async updateEventById(req, res) {
-        const { id } = req.params; // Match the parameter name in the route
+        const { id } = req.params;
         try {
             const event = await db.query('SELECT * FROM renginys WHERE id = $1', [id]);
             if (!event.rows.length) {
