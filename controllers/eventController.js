@@ -24,6 +24,12 @@ class EventController {
 
     static async getEventById(req, res) {
         const { id } = req.params;
+    
+        if (!Number.isInteger(Number(id))) {
+            console.error(`Invalid ID: ${id}`);
+            return res.status(400).json({ error: 'Invalid ID format' });
+        }
+    
         try {
             const event = await db.query('SELECT * FROM renginys WHERE id = $1', [id]);
             if (!event.rows.length) {
@@ -35,6 +41,7 @@ class EventController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
+    
 
     static async createEvent(req, res) {
         try {
@@ -86,13 +93,13 @@ class EventController {
     }
 
     static async updateEventById(req, res) {
-        const { eventid } = req.params;
+        const { id } = req.params; // Match the parameter name in the route
         try {
-            const event = await db.query('SELECT * FROM renginys WHERE id = $1', [eventid]);
+            const event = await db.query('SELECT * FROM renginys WHERE id = $1', [id]);
             if (!event.rows.length) {
                 return res.status(404).json({ error: 'Renginys nerastas' });
             }
-
+    
             const {
                 pavadinimas,
                 aprasymas,
@@ -106,7 +113,7 @@ class EventController {
                 nuotrauka,
                 koordinate,
             } = req.body;
-
+    
             await db.query(
                 `UPDATE renginys
                  SET pavadinimas = $1, aprasymas = $2, data = $3, pradzios_laikas = $4, pabaigos_laikas = $5, 
@@ -125,10 +132,10 @@ class EventController {
                     privatus !== undefined ? privatus : event.rows[0].privatus,
                     nuotrauka || event.rows[0].nuotrauka,
                     koordinate || event.rows[0].koordinate,
-                    eventid,
+                    id, // Use the correct variable name
                 ]
             );
-
+    
             res.status(200).json({ message: 'Renginys atnaujintas sėkmingai' });
         } catch (error) {
             console.error('Klaida atnaujinant renginį:', error);
@@ -158,10 +165,12 @@ class EventController {
 
     static async getAllCities(req, res) {
         try {
+            console.log('Fetching cities from the database...');
             const cities = await db.query('SELECT id, pavadinimas FROM miestas');
+            console.log('Cities fetched successfully:', cities.rows);
             res.status(200).json(cities.rows);
         } catch (error) {
-            console.error('Klaida gaunant miestus:', error);
+            console.error('Klaida gaunant miestus:', error.message);
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
