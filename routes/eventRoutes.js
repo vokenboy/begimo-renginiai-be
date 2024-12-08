@@ -8,7 +8,7 @@ router.get('/events/private', EventController.getPrivateEvents);
 router.get('/event/:id', EventController.getEventById);
 router.get('/cities', EventController.getAllCities);
 router.post('/event/postevent', EventController.createEvent);
-router.put('/editevent/:id', EventController.updateEventById);
+router.put('/update/:id', EventController.updateEvent);
 router.delete('/deleteevent/:id', EventController.deleteEventById);
 
 module.exports = router;
