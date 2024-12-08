@@ -9,5 +9,6 @@ router.get('/get/:userid', UserController.getUserById);
 router.put('/update/:userid', UserController.updateUser);
 router.post('/forgot-password', UserController.recoverPassword);
 router.post('/change-password', UserController.changePassword);
+router.get('/get/email/:email', UserController.getUserByEmail);
 
 module.exports = router;
