@@ -11,4 +11,5 @@ router.post('/forgot-password', UserController.recoverPassword);
 router.post('/change-password', UserController.changePassword);
 router.get('/getstats/:userid', UserController.getUserRunningStatistics);
 
+
 module.exports = router;
