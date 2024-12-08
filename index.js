@@ -4,6 +4,7 @@ const testRoute = require('./routes/testRoute');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const inviteRoutes = require('./routes/inviteRoutes');
+const commentRoutes = require('./routes/commentRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/test', testRoute);
 app.use('/user', userRoutes);
 app.use('/event', eventRoutes);
 app.use('/invite', inviteRoutes);
+app.use('/comment', commentRoutes);
 
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);
