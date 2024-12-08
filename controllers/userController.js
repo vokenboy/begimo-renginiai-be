@@ -244,7 +244,29 @@ class UserController {
             res.status(200).json({ message: 'Recovery email sent' });
         }
         res.status(200).json({ message: 'Recovery email sent' });
-    } 
+    }
+
+    static async getUserRunningStatistics(req, res) {
+        try {
+            if (!req.params.userid) {
+                return res.status(400).json({ error: 'Naudotojo ID laukas yra būtinas' });
+            }
+            const statistics = await db.query(`
+                SELECT 
+                    COUNT(*) AS total_runs,
+                    SUM(nubėgtas_atstumas) AS total_distance,
+                    SUM(EXTRACT(EPOCH FROM laikas)) AS total_time_seconds,
+                    AVG(tempas) AS average_pace
+                FROM 
+                    begimo_rezultatas
+                WHERE 
+                    naudotojas_id = $1
+            `, [req.params.userid]);
+            res.status(200).json(statistics.rows);
+        } catch (error) {
+            res.status(500).json({ error: 'Serverio klaida' });
+        }
+    }
 
 }
 
