@@ -1,5 +1,6 @@
 const db = require('../db');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 
 class EventController {
     static async getPublicEvents(req, res) {
@@ -24,17 +25,25 @@ class EventController {
 
     static async getEventById(req, res) {
         const { id } = req.params;
-    
         if (!Number.isInteger(Number(id))) {
             console.error(`Invalid ID: ${id}`);
             return res.status(400).json({ error: 'Invalid ID format' });
         }
     
         try {
-            const event = await db.query('SELECT * FROM renginys WHERE id = $1', [id]);
+            const event = await db.query(`
+                SELECT 
+                    renginys.*, 
+                    miestas.pavadinimas AS miestas_pavadinimas
+                FROM renginys
+                LEFT JOIN miestas ON renginys.miestas_id = miestas.id
+                WHERE renginys.id = $1
+            `, [id]);
+
             if (!event.rows.length) {
                 return res.status(404).json({ error: 'Renginys nerastas' });
             }
+    
             res.status(200).json(event.rows[0]);
         } catch (error) {
             console.error('Klaida gaunant renginį:', error);
@@ -182,6 +191,66 @@ class EventController {
             res.status(200).json(cities.rows);
         } catch (error) {
             console.error('Klaida gaunant miestus:', error.message);
+            res.status(500).json({ error: 'Serverio klaida' });
+        }
+    }
+
+    static async getWeatherByEvent(req, res) {
+        const { id } = req.params;
+    
+        try {
+            const event = await db.query(`
+                SELECT 
+                    renginys.pavadinimas, 
+                    renginys.data, 
+                    renginys.pradzios_laikas, 
+                    renginys.koordinate
+                FROM renginys
+                WHERE renginys.id = $1
+            `, [id]);
+    
+            if (!event.rows.length) {
+                return res.status(404).json({ error: 'Renginys nerastas' });
+            }
+    
+            const eventDetails = event.rows[0];
+    
+            const [latitude, longitude] = eventDetails.koordinate.split(',').map(coord => parseFloat(coord.trim()));
+    
+            if (isNaN(latitude) || isNaN(longitude)) {
+                return res.status(400).json({ error: 'Invalid coordinates format' });
+            }
+    
+            const eventDate = new Date(eventDetails.data).toISOString().split('T')[0];
+    
+            const weatherResponse = await axios.get('https://api.open-meteo.com/v1/forecast', {
+                params: {
+                    latitude,
+                    longitude,
+                    start_date: eventDate,
+                    end_date: eventDate,
+                    hourly: 'temperature_2m,precipitation,wind_speed_10m',
+                }
+            });
+
+            res.status(200).json({
+                event: {
+                    pavadinimas: eventDetails.pavadinimas,
+                    data: eventDetails.data,
+                    pradzios_laikas: eventDetails.pradzios_laikas,
+                    koordinate: eventDetails.koordinate,
+                },
+                weather: weatherResponse.data
+            });
+        } catch (error) {
+            console.error('Klaida gaunant orų prognozę:', error.message);
+    
+            if (error.response) {
+                return res.status(error.response.status).json({
+                    error: `Weather API error: ${error.response.data}`,
+                });
+            }
+    
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
