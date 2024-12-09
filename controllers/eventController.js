@@ -34,12 +34,15 @@ class EventController {
             const event = await db.query(`
                 SELECT 
                     renginys.*, 
-                    miestas.pavadinimas AS miestas_pavadinimas
+                    miestas.pavadinimas AS miestas_pavadinimas,
+                    naudotojas.vardas AS organizatorius_vardas,
+                    naudotojas.pavarde AS organizatorius_pavarde
                 FROM renginys
                 LEFT JOIN miestas ON renginys.miestas_id = miestas.id
+                LEFT JOIN naudotojas ON renginys.organizatorius_id = naudotojas.id
                 WHERE renginys.id = $1
             `, [id]);
-
+    
             if (!event.rows.length) {
                 return res.status(404).json({ error: 'Renginys nerastas' });
             }
@@ -50,6 +53,7 @@ class EventController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
+    
     
 
     static async createEvent(req, res) {
@@ -68,15 +72,16 @@ class EventController {
                 nuotrauka,
                 koordinate,
                 miestas_id,
+                organizatorius_id,
             } = req.body;
-
-            if (!pavadinimas || !data || !pradzios_laikas || !miestas_id) {
-                return res.status(400).json({ error: 'Pavadinimas, data, pradžios laikas ir miesto ID yra privalomi' });
+    
+            if (!pavadinimas || !data || !pradzios_laikas || !miestas_id || !organizatorius_id) {
+                return res.status(400).json({ error: 'Pavadinimas, data, pradžios laikas, miesto ID ir organizatorius_id yra privalomi' });
             }
-
+    
             const result = await db.query(
-                `INSERT INTO renginys (pavadinimas, aprasymas, data, pradzios_laikas, pabaigos_laikas, internetinio_puslapio_nuoroda, facebook_nuoroda, sukurimo_data, adresas, privatus, nuotrauka, koordinate, miestas_id)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+                `INSERT INTO renginys (pavadinimas, aprasymas, data, pradzios_laikas, pabaigos_laikas, internetinio_puslapio_nuoroda, facebook_nuoroda, sukurimo_data, adresas, privatus, nuotrauka, koordinate, miestas_id, organizatorius_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
                 [
                     pavadinimas,
                     aprasymas,
@@ -91,15 +96,17 @@ class EventController {
                     nuotrauka,
                     koordinate,
                     miestas_id,
+                    organizatorius_id
                 ]
             );
-
+    
             res.status(201).json({ message: 'Renginys sukurtas sėkmingai', renginys: result.rows[0] });
         } catch (error) {
             console.error('Klaida kuriant renginį:', error);
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
+    
 
     static async updateEvent(req, res) {
         const { id } = req.params;
