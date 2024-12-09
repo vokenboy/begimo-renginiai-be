@@ -1,6 +1,7 @@
 const express = require('express');
 const EventController = require('../controllers/eventController');
 
+
 const router = express.Router();
 
 router.get('/events/public', EventController.getPublicEvents);
@@ -10,5 +11,6 @@ router.get('/cities', EventController.getAllCities);
 router.post('/event/postevent', EventController.createEvent);
 router.put('/update/:id', EventController.updateEvent);
 router.delete('/deleteevent/:id', EventController.deleteEventById);
+router.get('/:id/weather', EventController.getWeatherByEvent);
 
 module.exports = router;
