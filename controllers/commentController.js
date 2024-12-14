@@ -1,6 +1,6 @@
 const db = require('../db'); // Database connection
 const jwt = require('jsonwebtoken');
-import EmailController from './emailController';
+const EmailController = require('./emailController');
 
 class CommentController {
 	// Get all invitations
