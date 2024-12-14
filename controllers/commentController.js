@@ -1,12 +1,13 @@
 const db = require('../db'); // Database connection
 const jwt = require('jsonwebtoken');
+import EmailController from './emailController';
 
 class CommentController {
 	// Get all invitations
 	static async fetchAllComments(req, res) {
 		try {
 			const { id } = req.params;
-            console.log(id)
+			console.log(id);
 			if (!id) {
 				return res.status(400).json({ error: 'Nėra renginio id' });
 			}
@@ -26,12 +27,22 @@ class CommentController {
 			if (!tekstas || !data || !autoriaus_id || !renginio_id) {
 				return res.status(400).json({ error: 'Visi laukai yra privalomi' });
 			}
-            console.log(autoriaus_id);
-            console.log(renginio_id);
+			console.log(autoriaus_id);
+			console.log(renginio_id);
 			const result = await db.query(
 				`INSERT INTO komentaras(tekstas, data, renginio_id, naudotojo_id)
 	             VALUES ($1, $2, $3, $4) RETURNING *`,
 				[tekstas, data, renginio_id, autoriaus_id]
+			);
+
+			const event = await db.query(`SELECT * FROM renginys WHERE id = $1`, [renginio_id]);
+
+			const organiser = await db.query(`SELECT * FROM naudotojas WHERE id = $1`, event.organizatoriaus_id);
+
+			EmailController.sendCommentAlertEmail(
+				organiser.slapyvardis,
+				organiser.el_pastas,
+				`http://localhost:3000/run/${renginio_id}`
 			);
 
 			res.status(201).json({ message: 'Komentaras sukurtas sėkmingai', komentaras: result.rows[0] });
@@ -41,10 +52,9 @@ class CommentController {
 		}
 	}
 
-    static async deleteComment(req, res) {
+	static async deleteComment(req, res) {
 		const { id } = req.params;
 		try {
-
 			await db.query('DELETE FROM komentaras WHERE id = $1', [id]);
 			res.status(200).json({ message: 'Komentaras sėkmingai ištrintas' });
 		} catch (error) {
@@ -53,7 +63,7 @@ class CommentController {
 		}
 	}
 
-    static async getComment(req, res) {
+	static async getComment(req, res) {
 		const { id } = req.params;
 		try {
 			const comment = await db.query('SELECT * FROM komentaras WHERE id = $1', [id]);
@@ -66,7 +76,7 @@ class CommentController {
 			res.status(500).json({ error: 'Serverio klaida' });
 		}
 	}
-    static async updateComment(req, res) {
+	static async updateComment(req, res) {
 		const { id } = req.params;
 		try {
 			const comment = await db.query('SELECT * FROM komentaras WHERE id = $1', [id]);
@@ -95,7 +105,7 @@ class CommentController {
 			res.status(500).json({ error: 'Serverio klaida' });
 		}
 	}
-    /*
+	/*
 	// Update an invitation by ID
 	static async updateInvitationById(req, res) {
 		const { id } = req.params;
