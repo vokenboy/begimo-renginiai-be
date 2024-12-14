@@ -23,6 +23,22 @@ class EmailController {
 		await mailersend.email.send(emailParams);
 	}
 
+	static async sendCommentAlertEmail(username, email, link) {
+		console.log('sending comment alert email sent to:', email);
+		const sentFrom = new Sender('serveris@trial-k68zxl2nke9lj905.mlsender.net', 'Begimo renginiai');
+
+		const recipients = [new Recipient(email, username)];
+
+		const emailParams = new EmailParams()
+			.setFrom(sentFrom)
+			.setTo(recipients)
+			.setReplyTo(sentFrom)
+			.setSubject('Naujas komentaras')
+			.setHtml(`<strong>Sveiki, naujas komentaras apie jūsų renginį: <a href="${link}">${link}</a></strong>`)
+			.setText(`Sveiki, naujas komentaras apie jūsų renginį: ${link}`);
+		await mailersend.email.send(emailParams);
+	}
+
 	static async sendEventReminderEmail(username, email, link) {
 		console.log('sending event reminder email sent to:', email);
 		const sentFrom = new Sender('serveris@trial-k68zxl2nke9lj905.mlsender.net', 'Begimo renginiai');
@@ -35,11 +51,11 @@ class EmailController {
 			.setReplyTo(sentFrom)
 			.setSubject('Artėjantis renginys')
 			.setHtml(`<strong>Sveiki, primename jog artėja renginys: <a href="${link}">${link}</a></strong>`)
-			.setText(`Norint pakeisti savo slaptažodį, atidarykite nuorodą: ${link}`);
+			.setText(`Sveiki, primename jog artėja renginys: ${link}`);
 		await mailersend.email.send(emailParams);
 	}
 
-	static scheduleEmail(username, email, code, sendDate) {
+	static scheduleEmail(username, email, link, sendDate) {
 		const currentTime = new Date();
 		const delay = sendDate - currentTime; // Calculate time difference in milliseconds
 
@@ -58,7 +74,7 @@ class EmailController {
 
 		cron.schedule(cronSchedule, async () => {
 			try {
-				await EmailController.sendPasswordRecoveryEmail(username, email, code);
+				await sendEventReminderEmail(username, email, link);
 				console.log(`Email successfully sent to ${email} at: ${new Date().toISOString()}`);
 			} catch (error) {
 				console.error('Error sending email:', error);
