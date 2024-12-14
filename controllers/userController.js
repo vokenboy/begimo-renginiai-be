@@ -418,6 +418,21 @@ class UserController {
 		}
 		res.status(200).json({ message: 'Recovery email sent' });
 	}
+
+	static async isUserOrganizer(userId) {
+		try {
+			const result = await db.query(
+				'SELECT id FROM organizatorius WHERE id = $1',
+				[userId]
+			);
+	
+			return result.rows.length > 0;
+		} catch (error) {
+			console.error('Error checking if user is an organizer:', error);
+			throw new Error('Server error while checking organizer status');
+		}
+	}
+	
 }
 
 module.exports = UserController;
