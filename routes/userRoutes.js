@@ -28,5 +28,21 @@ router.get('/is-organizer/:userId', async (req, res) => {
     }
 });
 
+router.get('/is-admin/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        if (!userId || isNaN(parseInt(userId))) {
+            return res.status(400).json({ error: 'Invalid or missing user ID' });
+        }
+
+        const isAdmin = await UserController.isAdmin(userId);
+
+        res.status(200).json({ isAdmin });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error while checking admin status' });
+    }
+});
+
 
 module.exports = router;

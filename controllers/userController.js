@@ -432,7 +432,20 @@ class UserController {
 			throw new Error('Server error while checking organizer status');
 		}
 	}
-	
+
+	static async isAdmin(userId) {
+        try {
+            const result = await db.query(
+                'SELECT id FROM administratorius WHERE id = $1',
+                [userId]
+            );
+
+            return result.rows.length > 0;
+        } catch (error) {
+            console.error('[ERROR] Checking admin status failed:', error);
+            throw new Error('Server error while checking admin status');
+        }
+    }
 }
 
 module.exports = UserController;
