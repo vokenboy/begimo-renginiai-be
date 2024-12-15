@@ -16,6 +16,10 @@
   "dependencies": {
     "argon2": "^0.41.1",
     "axios": "^1.7.9",
+<<<<<<< HEAD
+=======
+    "begimo-renginiai-be": "file:",
+>>>>>>> 1e057949b2ab99eec3b7b73a05827d54424b6c78
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
