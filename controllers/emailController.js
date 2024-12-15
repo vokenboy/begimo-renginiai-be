@@ -1,6 +1,8 @@
 ({ MailerSend, EmailParams, Sender, Recipient } = require('mailersend'));
 
+
 const cron = require('node-cron');
+
 
 const mailersend = new MailerSend({
 	apiKey: process.env.EMAIL_API_TOKEN,
@@ -76,7 +78,9 @@ class EmailController {
 
 		cron.schedule(cronSchedule, async () => {
 			try {
+
 				await EmailController.lengthsendEventReminderEmail(username, email, link);
+
 				console.log(`Email successfully sent to ${email} at: ${new Date().toISOString()}`);
 			} catch (error) {
 				console.error('Error sending email:', error);

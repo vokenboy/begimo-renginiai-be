@@ -446,6 +446,7 @@ class UserController {
             throw new Error('Server error while checking admin status');
         }
     }
+
 }
 
 module.exports = UserController;

@@ -28,6 +28,7 @@ router.get('/is-organizer/:userId', async (req, res) => {
     }
 });
 
+
 router.get('/is-admin/:userId', async (req, res) => {
     try {
         const { userId } = req.params;

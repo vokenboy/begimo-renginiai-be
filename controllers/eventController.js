@@ -25,8 +25,10 @@ class EventController {
 
     static async getEventById(req, res) {
         const { id } = req.params;
+
         console.log('[DEBUG] Fetching event with ID:', id);
     
+
         if (!Number.isInteger(Number(id))) {
             console.error('[ERROR] Invalid ID format:', id);
             return res.status(400).json({ error: 'Invalid ID format' });
@@ -48,6 +50,7 @@ class EventController {
     
             console.log('[DEBUG] Event fetched:', event.rows);
     
+
             if (!event.rows.length) {
                 console.warn('[WARN] Event not found with ID:', id);
                 return res.status(404).json({ error: 'Renginys nerastas' });
@@ -277,6 +280,7 @@ class EventController {
         }
     }
 
+
     static async getDistances(req, res) {
         try {
             const distances = await db.query('SELECT id, atstumas, pavadinimas FROM distancija');
@@ -286,7 +290,6 @@ class EventController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
-    
 }
 
 module.exports = EventController;
