@@ -432,9 +432,6 @@ class UserController {
 			throw new Error('Server error while checking organizer status');
 		}
 	}
-<<<<<<< HEAD
-	
-=======
 
 	static async isAdmin(userId) {
         try {
@@ -449,7 +446,7 @@ class UserController {
             throw new Error('Server error while checking admin status');
         }
     }
->>>>>>> 1e057949b2ab99eec3b7b73a05827d54424b6c78
+
 }
 
 module.exports = UserController;

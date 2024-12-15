@@ -25,11 +25,10 @@ class EventController {
 
     static async getEventById(req, res) {
         const { id } = req.params;
-<<<<<<< HEAD
-=======
+
         console.log('[DEBUG] Fetching event with ID:', id);
     
->>>>>>> 1e057949b2ab99eec3b7b73a05827d54424b6c78
+
         if (!Number.isInteger(Number(id))) {
             console.error('[ERROR] Invalid ID format:', id);
             return res.status(400).json({ error: 'Invalid ID format' });
@@ -39,14 +38,6 @@ class EventController {
             const event = await db.query(`
                 SELECT 
                     renginys.*, 
-<<<<<<< HEAD
-                    miestas.pavadinimas AS miestas_pavadinimas
-                FROM renginys
-                LEFT JOIN miestas ON renginys.miestas_id = miestas.id
-                WHERE renginys.id = $1
-            `, [id]);
-
-=======
                     miestas.pavadinimas AS miestas_pavadinimas,
                     distancija.pavadinimas AS distancija_pavadinimas,
                     distancija.atstumas AS distancija_atstumas,
@@ -59,7 +50,7 @@ class EventController {
     
             console.log('[DEBUG] Event fetched:', event.rows);
     
->>>>>>> 1e057949b2ab99eec3b7b73a05827d54424b6c78
+
             if (!event.rows.length) {
                 console.warn('[WARN] Event not found with ID:', id);
                 return res.status(404).json({ error: 'Renginys nerastas' });
@@ -288,8 +279,7 @@ class EventController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
-<<<<<<< HEAD
-=======
+
 
     static async getDistances(req, res) {
         try {
@@ -300,8 +290,6 @@ class EventController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
-    
->>>>>>> 1e057949b2ab99eec3b7b73a05827d54424b6c78
 }
 
 module.exports = EventController;

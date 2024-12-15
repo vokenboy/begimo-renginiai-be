@@ -28,8 +28,7 @@ router.get('/is-organizer/:userId', async (req, res) => {
     }
 });
 
-<<<<<<< HEAD
-=======
+
 router.get('/is-admin/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -46,6 +45,5 @@ router.get('/is-admin/:userId', async (req, res) => {
     }
 });
 
->>>>>>> 1e057949b2ab99eec3b7b73a05827d54424b6c78
 
 module.exports = router;

@@ -6,6 +6,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const inviteRoutes = require('./routes/inviteRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
+
 require('dotenv').config();
 
 const app = express();
