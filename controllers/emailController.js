@@ -8,7 +8,7 @@ const mailersend = new MailerSend({
 class EmailController {
     static async sendPasswordRecoveryEmail(username, email, code) {
         console.log('sending password recovery email sent to:', email);
-        const sentFrom = new Sender("serveris@trial-k68zxl2nke9lj905.mlsender.net", "Begimo renginiai");
+		const sentFrom = new Sender('serveris@trial-pxkjn41en30lz781.mlsender.net', 'Begimo renginiai');
 
         const recipients = [
         new Recipient(email, username)
