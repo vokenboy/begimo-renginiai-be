@@ -57,17 +57,17 @@ class RegistrationController {
 
 			if (send_reminders) {
 				await this.addEventToGoogleCalendar(naudotojo_id, renginio_id, vardas, el_pastas);
+
+				const renginysQuery = `SELECT * FROM reginys WHERE id = $1`;
+				const renginys = await db.query(renginysQuery, [renginio_id]);
+
+				EmailController.scheduleEmail(
+					vardas,
+					el_pastas,
+					`http://localhost:3000/register-event/${renginio_id}`,
+					Date(renginys.data) - 60000 * 60 * 24 //Išsiunčia 24h iki renginio
+				);
 			}
-
-			const renginysQuery = `SELECT * FROM reginys WHERE id = $1`;
-			const renginys = await db.query(renginysQuery, [renginio_id]);
-
-			EmailController.scheduleEmail(
-				vardas,
-				el_pastas,
-				`http://localhost:3000/register-event/${renginio_id}`,
-				Date(renginys.data) - 60000 * 60 * 24 //Išsiunčia 24h iki renginio
-			);
 
 			res.status(201).json({
 				message: 'Naudotojas sėkmingai užsiregistravo',
