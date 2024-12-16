@@ -45,11 +45,13 @@ class EventController {
                     demografija.maksimalus_amzius,
                     demografija.lytis_nuo,
                     demografija.lytis_iki,
-                    demografija.maksimalus_skaicius
+                    demografija.maksimalus_skaicius,
+                    organizatorius.el_pastas AS organizatorius_el_pastas
                 FROM renginys
                 LEFT JOIN miestas ON renginys.miestas_id = miestas.id
                 LEFT JOIN distancija ON renginys.distancija_id = distancija.id
                 LEFT JOIN demografija ON renginys.demografija_id = demografija.id
+                LEFT JOIN organizatorius ON renginys.organizatorius_id = organizatorius.id
                 WHERE renginys.id = $1
             `, [id]);
     
@@ -65,7 +67,7 @@ class EventController {
             console.error('[ERROR] Fetching event failed:', error);
             res.status(500).json({ error: 'Serverio klaida' });
         }
-    }        
+    }           
     
 
     static async createEvent(req, res) {
