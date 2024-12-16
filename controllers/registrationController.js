@@ -2,6 +2,7 @@ const db = require('../db'); // Assume you have a database connection set up
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
+
 //const { OAuth2Client } = require('google-auth-library');
 //const session = require('express-session');
 
@@ -118,37 +119,39 @@ static async updateRegistration(req, res) {
         }
 
         const checkQuery = `
+
             SELECT * FROM registracijos
             WHERE naudotojo_id = $1 AND renginio_id = $2;
         `;
-        const checkResult = await db.query(checkQuery, [naudotojo_id, renginio_id]);
+			const checkResult = await db.query(checkQuery, [naudotojo_id, renginio_id]);
 
-        if (checkResult.rows.length > 0) {
-            const updateQuery = `
+			if (checkResult.rows.length > 0) {
+				const updateQuery = `
                 UPDATE registracijos
                 SET send_reminders = $1, registracijos_data = NOW()
                 WHERE naudotojo_id = $2 AND renginio_id = $3
                 RETURNING *;
             `;
-            const updateResult = await db.query(updateQuery, [send_reminders, naudotojo_id, renginio_id]);
-            return res.status(200).json({
-                message: 'Registration updated successfully',
-                registration: updateResult.rows[0],
-            });
-        } else {
-            const userQuery = 'SELECT vardas, el_pastas FROM naudotojas WHERE id = $1';
-            const userResult = await db.query(userQuery, [naudotojo_id]);
+				const updateResult = await db.query(updateQuery, [send_reminders, naudotojo_id, renginio_id]);
+				return res.status(200).json({
+					message: 'Registration updated successfully',
+					registration: updateResult.rows[0],
+				});
+			} else {
+				const userQuery = 'SELECT vardas, el_pastas FROM naudotojas WHERE id = $1';
+				const userResult = await db.query(userQuery, [naudotojo_id]);
 
-            if (userResult.rows.length === 0) {
-                return res.status(404).json({ message: 'User not found' });
-            }
+				if (userResult.rows.length === 0) {
+					return res.status(404).json({ message: 'User not found' });
+				}
 
-            const { vardas, el_pastas } = userResult.rows[0];
+				const { vardas, el_pastas } = userResult.rows[0];
 
-            const insertQuery = `
+				const insertQuery = `
                 INSERT INTO registracijos (vardas, el_pastas, registracijos_data, renginio_id, naudotojo_id, send_reminders)
                 VALUES ($1, $2, NOW(), $3, $4, $5) RETURNING *;
             `;
+
             const insertResult = await db.query(insertQuery, [vardas, el_pastas, renginio_id, naudotojo_id, send_reminders]);
 
             return res.status(201).json({
@@ -273,8 +276,7 @@ static async addEventToGoogleCalendar(eventId, send_reminders) {
     }
 }
 
+
 }
 
-
-module.exports = RegistrationController
-          
+module.exports = RegistrationController;

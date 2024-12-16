@@ -12,7 +12,7 @@ router.post('/event/postevent', EventController.createEvent);
 router.put('/update/:id', EventController.updateEvent);
 router.delete('/deleteevent/:id', EventController.deleteEventById);
 router.get('/:id/weather', EventController.getWeatherByEvent);
-
 router.get('/distances', EventController.getDistances);
+router.get('/demographics', EventController.getDemographics);
 
 module.exports = router;

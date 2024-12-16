@@ -25,10 +25,9 @@ class EventController {
 
     static async getEventById(req, res) {
         const { id } = req.params;
-
+    
         console.log('[DEBUG] Fetching event with ID:', id);
     
-
         if (!Number.isInteger(Number(id))) {
             console.error('[ERROR] Invalid ID format:', id);
             return res.status(400).json({ error: 'Invalid ID format' });
@@ -41,16 +40,23 @@ class EventController {
                     miestas.pavadinimas AS miestas_pavadinimas,
                     distancija.pavadinimas AS distancija_pavadinimas,
                     distancija.atstumas AS distancija_atstumas,
-                    renginys.organizatorius_id
+                    demografija.pavadinimas AS demografija_pavadinimas,
+                    demografija.minimalus_amzius,
+                    demografija.maksimalus_amzius,
+                    demografija.lytis_nuo,
+                    demografija.lytis_iki,
+                    demografija.maksimalus_skaicius,
+                    organizatorius.el_pastas AS organizatorius_el_pastas
                 FROM renginys
                 LEFT JOIN miestas ON renginys.miestas_id = miestas.id
                 LEFT JOIN distancija ON renginys.distancija_id = distancija.id
+                LEFT JOIN demografija ON renginys.demografija_id = demografija.id
+                LEFT JOIN organizatorius ON renginys.organizatorius_id = organizatorius.id
                 WHERE renginys.id = $1
             `, [id]);
     
             console.log('[DEBUG] Event fetched:', event.rows);
     
-
             if (!event.rows.length) {
                 console.warn('[WARN] Event not found with ID:', id);
                 return res.status(404).json({ error: 'Renginys nerastas' });
@@ -61,12 +67,11 @@ class EventController {
             console.error('[ERROR] Fetching event failed:', error);
             res.status(500).json({ error: 'Serverio klaida' });
         }
-    }    
+    }           
     
 
     static async createEvent(req, res) {
         try {
-
             const {
                 pavadinimas,
                 aprasymas,
@@ -82,21 +87,22 @@ class EventController {
                 miestas_id,
                 distancija_id,
                 organizatorius_id,
+                demografija_id,
             } = req.body;
-
+    
             if (!pavadinimas || !data || !pradzios_laikas || !miestas_id || !distancija_id || !organizatorius_id) {
                 return res.status(400).json({
                     error: 'Pavadinimas, data, pradžios laikas, miesto ID, distancijos ID ir organizatoriaus ID yra privalomi',
                 });
             }
-
+    
             const result = await db.query(
                 `INSERT INTO renginys (
                     pavadinimas, aprasymas, data, pradzios_laikas, pabaigos_laikas,
                     internetinio_puslapio_nuoroda, facebook_nuoroda, adresas, privatus,
-                    nuotrauka, koordinate, miestas_id, distancija_id, organizatorius_id
+                    nuotrauka, koordinate, miestas_id, distancija_id, organizatorius_id, demografija_id
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 RETURNING *`,
                 [
                     pavadinimas,
@@ -113,11 +119,13 @@ class EventController {
                     miestas_id,
                     distancija_id,
                     organizatorius_id,
+                    demografija_id || null,
                 ]
             );
-
+    
             res.status(201).json({ message: 'Renginys sukurtas sėkmingai', renginys: result.rows[0] });
         } catch (error) {
+            console.error('Klaida kuriant renginį:', error);
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
@@ -141,6 +149,7 @@ class EventController {
                 koordinate,
                 miestas_id,
                 distancija_id,
+                demografija_id,
             } = req.body;
     
             if (!pavadinimas || !data || !pradzios_laikas || !miestas_id || !distancija_id) {
@@ -155,8 +164,8 @@ class EventController {
                 `UPDATE renginys
                  SET pavadinimas = $1, aprasymas = $2, data = $3, pradzios_laikas = $4, pabaigos_laikas = $5,
                      internetinio_puslapio_nuoroda = $6, facebook_nuoroda = $7, adresas = $8, privatus = $9,
-                     nuotrauka = $10, koordinate = $11, miestas_id = $12, distancija_id = $13
-                 WHERE id = $14 RETURNING *`,
+                     nuotrauka = $10, koordinate = $11, miestas_id = $12, distancija_id = $13, demografija_id = $14
+                 WHERE id = $15 RETURNING *`,
                 [
                     pavadinimas,
                     aprasymas,
@@ -171,6 +180,7 @@ class EventController {
                     koordinate,
                     miestas_id,
                     distancija_id,
+                    demografija_id || null,
                     id,
                 ]
             );
@@ -185,6 +195,7 @@ class EventController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
+    
     
     static async deleteEventById(req, res) {
         const { id } = req.params;
@@ -290,6 +301,17 @@ class EventController {
             res.status(500).json({ error: 'Serverio klaida' });
         }
     }
+
+    static async getDemographics(req, res) {
+        try {
+            const demographics = await db.query('SELECT id, pavadinimas FROM demografija');
+            res.status(200).json(demographics.rows);
+        } catch (error) {
+            console.error('Klaida gaunant demografiją:', error.message);
+            res.status(500).json({ error: 'Serverio klaida' });
+        }
+    }
+    
 }
 
 module.exports = EventController;

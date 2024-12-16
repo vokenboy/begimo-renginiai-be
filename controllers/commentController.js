@@ -37,11 +37,14 @@ class CommentController {
 
 			const event = await db.query(`SELECT * FROM renginys WHERE id = $1`, [renginio_id]);
 
-			const organiser = await db.query(`SELECT * FROM naudotojas WHERE id = $1`, event.organizatoriaus_id);
+			console.log('=====================================================');
+			console.log(event.rows[0].organizatorius_id);
+
+			const organiser = await db.query(`SELECT * FROM naudotojas WHERE id = $1`, [event.rows[0].organizatorius_id]);
 
 			EmailController.sendCommentAlertEmail(
-				organiser.slapyvardis,
-				organiser.el_pastas,
+				organiser.rows[0].slapyvardis,
+				organiser.rows[0].el_pastas,
 				`http://localhost:3000/run/${renginio_id}`
 			);
 

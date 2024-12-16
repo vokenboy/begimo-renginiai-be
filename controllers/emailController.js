@@ -1,17 +1,15 @@
 ({ MailerSend, EmailParams, Sender, Recipient } = require('mailersend'));
 
-
 const cron = require('node-cron');
-
 
 const mailersend = new MailerSend({
 	apiKey: process.env.EMAIL_API_TOKEN,
 });
 
 class EmailController {
-	static async sendPasswordRecoveryEmail(username, email, code) {
-		console.log('sending password recovery email sent to:', email);
-		const sentFrom = new Sender('serveris@trial-k68zxl2nke9lj905.mlsender.net', 'Begimo renginiai');
+    static async sendPasswordRecoveryEmail(username, email, code) {
+        console.log('sending password recovery email sent to:', email);
+		const sentFrom = new Sender('serveris@trial-pxkjn41en30lz781.mlsender.net', 'Begimo renginiai');
 
 		const recipients = [new Recipient(email, username)];
 
@@ -78,8 +76,7 @@ class EmailController {
 
 		cron.schedule(cronSchedule, async () => {
 			try {
-
-				await EmailController.lengthsendEventReminderEmail(username, email, link);
+				await EmailController.sendEventReminderEmail(username, email, link);
 
 				console.log(`Email successfully sent to ${email} at: ${new Date().toISOString()}`);
 			} catch (error) {
