@@ -2,7 +2,16 @@ const db = require('../db'); // Assume you have a database connection set up
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
+//const { OAuth2Client } = require('google-auth-library');
+//const session = require('express-session');
 
+// OAuth2 credentials from Google Cloud Console
+//const CLIENT_ID = '94208964171-54aum2bs35hr60rsr1fb2d2abs70d25d.apps.googleusercontent.com';
+//const CLIENT_SECRET = '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';
+//const REDIRECT_URI = 'http://localhost:3000/oauth2callback'; // Redirect URI from Google Cloud Console
+
+// Create OAuth2 client
+//const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 class RegistrationController
 {
 
@@ -51,9 +60,13 @@ static async registerUser(req, res) {
         `;
         const result = await db.query(query, [vardas, el_pastas, parseInt(renginio_id), parseInt(naudotojo_id), send_reminders]);
 
-        if (send_reminders) {
-            await this.addEventToGoogleCalendar(naudotojo_id, renginio_id, vardas, el_pastas);
+        // Get the tokens from the session
+        //const tokens = req.session.tokens;
+
+        if (send_reminders ) {
+            await RegistrationController.addEventToGoogleCalendar(renginio_id, el_pastas, send_reminders);
         }
+
         res.status(201).json({
             message: 'Naudotojas sėkmingai užsiregistravo',
             registration: result.rows[0],
@@ -64,25 +77,37 @@ static async registerUser(req, res) {
     }
 }
 
-// Function to delete a specific registration
-static async deleteRegistration (req, res){
-    const { registrationId } = req.params;
-    const { userId } = req.body;
 
+
+// Function to delete a specific registration
+static async deleteRegistration(req, res) {
     try {
+        const { registrationId } = req.params; // Extract from URL params
+        const { userId } = req.body; // Extract from request body
+
+        // Ensure that both registrationId and userId are provided
+        if (!registrationId || !userId) {
+            return res.status(400).json({ message: 'Registration ID and User ID are required' });
+        }
+
+        // Query to delete the registration
         const query = 'DELETE FROM registracijos WHERE id = $1 AND naudotojo_id = $2 RETURNING *;';
         const result = await db.query(query, [registrationId, userId]);
 
+        // If no rows are returned, the registration was not found or the user is unauthorized
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Registration not found or unauthorized' });
         }
 
+        // Successfully deleted the registration
         res.status(200).json({ message: 'Registration deleted successfully' });
     } catch (error) {
         console.error('Error deleting registration:', error);
         res.status(500).json({ message: 'Failed to delete registration' });
     }
 };
+
+
 // Update registration
 static async updateRegistration(req, res) {
     try {
@@ -136,8 +161,34 @@ static async updateRegistration(req, res) {
         res.status(500).json({ message: 'Failed to update registration' });
     }
 }
+// Redirect to Google OAuth2 authorization page
+/*static async authenticate(req, res) {
+    const authUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline', // Request refresh token
+        scope: ['https://www.googleapis.com/auth/calendar'],
+    });
+    res.redirect(authUrl);
+}*/
 
-static async addEventToGoogleCalendar(eventId, email) {
+// OAuth2 callback route to exchange code for tokens
+/*static async oauth2callback(req, res) {
+    const { code } = req.query;
+
+    try {
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+
+        // Save the tokens in the session or database
+        req.session.tokens = tokens;
+
+        res.send('Authentication successful! You can now close this window.');
+    } catch (error) {
+        console.error('Error during OAuth2 callback:', error);
+        res.status(500).send('Error during authentication');
+    }
+}*/
+
+static async addEventToGoogleCalendar(eventId, send_reminders) {
     try {
         // Fetch event details (you can modify this query based on your database schema)
         const eventQuery = 'SELECT * FROM renginys WHERE id = $1';
@@ -147,25 +198,41 @@ static async addEventToGoogleCalendar(eventId, email) {
             throw new Error('Event not found');
         }
 
-        const { pavadinimas, data, pradzios_laikas, pabaigos_laikas, adresas, aprasymas } = eventResult.rows[0];
+        const { pavadinimas, data, adresas, aprasymas } = eventResult.rows[0];
+
+        const registrationQuery = 'SELECT el_pastas FROM registracijos WHERE renginio_id = $1 LIMIT 1';
+        const registrationResult = await db.query(registrationQuery, [eventId]);
+
+        if (registrationResult.rows.length === 0) {
+            throw new Error('No registration found for this event');
+        }
+
+        const email = registrationResult.rows[0].el_pastas; // Get the email from the registration
+
+        // Use the OAuth2 client credentials from the session
+        
+        /*if (!tokens) {
+            throw new Error('No authentication tokens found');
+        }*/
+
+        //oauth2Client.setCredentials(tokens);
 
         // Path to your service account JSON file
-        const KEY_PATH = path.join(__dirname, '/running-events-444113-f9aa6932cb24.json');
+        const KEY_PATH = path.join(__dirname, '../running-events-444113-f9aa6932cb24.json');
 
-        const startDateTime = new Date(`${data}T${pradzios_laikas}:00+03:00`); // Lithuania is UTC+2 (or UTC+3 in daylight saving)
-        const endDateTime = new Date(`${data}T${pabaigos_laikas}:00+03:00`);
+       // const startDateTime = new Date(`${data}T${pradzios_laikas}:00+03:00`); // Lithuania is UTC+2 (or UTC+3 in daylight saving)
+       // const endDateTime = new Date(`${data}T${pabaigos_laikas}:00+03:00`);
 
-        // Set up Google OAuth2 client
+        const serviceAccount = JSON.parse(fs.readFileSync(KEY_PATH, 'utf8'));
         const auth = new google.auth.JWT(
-            require(KEY_PATH).client_email, // Service Account Email
+            serviceAccount.client_email,
             null,
-            require(KEY_PATH).private_key,  // Private Key
-            ['https://www.googleapis.com/auth/calendar'], // Scopes
-            null
+            serviceAccount.private_key,
+            ['https://www.googleapis.com/auth/calendar']
         );
         
         // Get the calendar API client
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client  });
 
         // Define event details
         const event = {
@@ -173,12 +240,10 @@ static async addEventToGoogleCalendar(eventId, email) {
             location: adresas,
             description: aprasymas,
             start: {
-                dateTime: startDateTime, 
-                timeZone: 'Europe/Vilnius',
+                dateTime: data,
             },
             end: {
-                dateTime: endDateTime,
-                timeZone: 'Europe/Vilnius',
+                dateTime: data,
             },
             attendees: [{ email: email }],
             reminders: send_reminders ? {
@@ -189,11 +254,16 @@ static async addEventToGoogleCalendar(eventId, email) {
                 ],
             } : undefined,
         };
-
-        // Insert the event into the user's calendar
-        await calendar.events.insert({
-            calendarId: 'primary',
+        // Insert the event into the Google Calendar
+        const calendarResponse = await calendar.events.insert({
+            calendarId: 'primary', // Use the primary calendar of the user
             resource: event,
+        }, (err, res) => {
+            if (err) {
+                console.log('Error creating event: ' + err);
+            } else {
+                console.log('Event created: ' + res.data.summary);
+            }
         });
 
         console.log('Event created and reminders set');
