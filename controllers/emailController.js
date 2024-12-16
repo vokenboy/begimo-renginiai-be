@@ -25,6 +25,24 @@ class EmailController {
 		await mailersend.email.send(emailParams);
 	}
 
+	static async sendRegisterEmail(username, email) {
+        console.log('registration email sent to:', email);
+		const sentFrom = new Sender('serveris@trial-pxkjn41en30lz781.mlsender.net', 'Begimo renginiai');
+
+		const recipients = [new Recipient(email, username)];
+
+		const emailParams = new EmailParams()
+			.setFrom(sentFrom)
+			.setTo(recipients)
+			.setReplyTo(sentFrom)
+			.setSubject('Priregistruota')
+			.setHtml(
+				`<strong>Naudotojas užregistruotas</strong>`
+			)
+			.setText(`<strong>Naudotojas užregistruotas</strong>`);
+		await mailersend.email.send(emailParams);
+	}
+
 	static async sendCommentAlertEmail(username, email, link) {
 		console.log('sending comment alert email sent to:', email);
 		const sentFrom = new Sender('serveris@trial-k68zxl2nke9lj905.mlsender.net', 'Begimo renginiai');

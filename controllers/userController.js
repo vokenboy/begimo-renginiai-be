@@ -18,6 +18,7 @@ class UserController {
 			const hashedPassword = await argon2.hash(password);
 			const newUser = { username, email, password: hashedPassword };
 			await UserController.insertUser(newUser);
+			EmailController.sendRegisterEmail(username, email);
 			res.status(201).json({ message: 'Naudotojas priregistruotas sėkmingai' });
 		} catch (error) {
 			console.error('Error updating user:', error);
